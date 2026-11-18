@@ -635,6 +635,7 @@ class WastelandAudio {
             baseUrl: ttsCfg.baseUrl,
             model: ttsCfg.model,
             voice: ttsCfg.voice,
+            apiKey: ttsCfg.apiKey,
           },
         }),
       });

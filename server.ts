@@ -69,6 +69,8 @@ interface RuntimeLlmConfig {
   provider?: "gemini" | "opencode" | "modelscope" | "custom";
   baseUrl?: string;
   model?: string;
+  /** 前端配置的密钥，优先于服务端环境变量 */
+  apiKey?: string;
 }
 
 interface RuntimeTtsConfig {
@@ -76,12 +78,16 @@ interface RuntimeTtsConfig {
   baseUrl?: string;
   model?: string;
   voice?: string;
+  /** 前端配置的密钥，优先于服务端环境变量 */
+  apiKey?: string;
 }
 
 interface RuntimeImageConfig {
   provider?: "wasteland_flux" | "modelscope" | "custom_openai" | "sd_webui";
   baseUrl?: string;
   model?: string;
+  /** 前端配置的密钥，优先于服务端环境变量 */
+  apiKey?: string;
 }
 
 interface NpcTurnResponse {
@@ -259,14 +265,15 @@ function wrapPcmAsWavDataUrl(base64Data: string, mimeType = ""): string {
   return `data:audio/wav;base64,${wavBuf.toString("base64")}`;
 }
 
-function createGeminiClient(): GoogleGenAI {
-  if (!process.env.GEMINI_API_KEY) {
+function createGeminiClient(apiKeyOverride?: string): GoogleGenAI {
+  const apiKey = apiKeyOverride?.trim() || process.env.GEMINI_API_KEY;
+  if (!apiKey) {
     throw new Error(
-      "服务端未检测到 GEMINI_API_KEY，请在环境变量面板检查密钥配置。"
+      "尚未配置 GEMINI_API_KEY，请在前端系统设置中填写 API Key 或检查服务端环境变量。"
     );
   }
   return new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY,
+    apiKey,
     httpOptions: {
       headers: {
         "User-Agent": "aistudio-build",
@@ -301,11 +308,13 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2): Promise<T> {
 function resolveOpenAiCompatibleCredentials(
   mode: "opencode" | "modelscope" | "custom",
   overrideBaseUrl?: string,
-  overrideModel?: string
+  overrideModel?: string,
+  overrideApiKey?: string
 ): { apiKey: string; baseUrl: string; model: string; allowKeyless: boolean } {
+  const clientApiKey = overrideApiKey?.trim() || "";
   if (mode === "opencode") {
     const apiKey =
-      process.env.OPENCODE_API_KEY?.trim() || getModelScopeToken();
+      clientApiKey || process.env.OPENCODE_API_KEY?.trim() || getModelScopeToken();
     const baseUrl = (
       overrideBaseUrl?.trim() ||
       process.env.OPENCODE_BASE_URL ||
@@ -321,7 +330,7 @@ function resolveOpenAiCompatibleCredentials(
   }
 
   if (mode === "modelscope") {
-    const apiKey = getModelScopeToken();
+    const apiKey = clientApiKey || getModelScopeToken();
     const isDashScope =
       !process.env.MODELSCOPE_API_KEY &&
       !process.env.MODELSCOPE_SDK_TOKEN &&
@@ -341,6 +350,7 @@ function resolveOpenAiCompatibleCredentials(
   }
 
   const apiKey =
+    clientApiKey ||
     process.env.CUSTOM_LLM_API_KEY?.trim() ||
     process.env.OPENCODE_API_KEY?.trim() ||
     getModelScopeToken();
@@ -364,10 +374,16 @@ async function generateViaOpenAICompatible(
   userPrompt: string,
   sessionKey: string,
   overrideBaseUrl?: string,
-  overrideModel?: string
+  overrideModel?: string,
+  overrideApiKey?: string
 ): Promise<{ result: NpcTurnResponse; modelName: string }> {
   const { apiKey, baseUrl, model, allowKeyless } =
-    resolveOpenAiCompatibleCredentials(mode, overrideBaseUrl, overrideModel);
+    resolveOpenAiCompatibleCredentials(
+      mode,
+      overrideBaseUrl,
+      overrideModel,
+      overrideApiKey
+    );
 
   if (!apiKey && !allowKeyless) {
     const envHint =
@@ -377,7 +393,7 @@ async function generateViaOpenAICompatible(
         ? "MODELSCOPE_API_KEY"
         : "CUSTOM_LLM_API_KEY";
     throw new Error(
-      `服务端尚未配置 ${envHint} 环境变量，请切换为 Gemini 官方通道或在环境配置中注入密钥。`
+      `尚未配置 ${envHint} 密钥，请在前端系统设置中填写 API Key，或检查服务端环境变量。`
     );
   }
 
@@ -446,9 +462,10 @@ async function generateViaOpenAICompatible(
 async function generateViaGemini(
   systemInstruction: string,
   userPrompt: string,
-  requestedModel?: string
+  requestedModel?: string,
+  apiKeyOverride?: string
 ): Promise<{ result: NpcTurnResponse; modelName: string }> {
-  const ai = createGeminiClient();
+  const ai = createGeminiClient(apiKeyOverride);
   const modelName = sanitizeFreeGeminiModel(requestedModel);
   const response = await ai.models.generateContent({
     model: modelName,
@@ -562,14 +579,20 @@ async function runNpcInference(
         userPrompt,
         sessionKey,
         effectiveBaseUrl,
-        effectiveModel
+        effectiveModel,
+        llmConfig?.apiKey
       )
     );
     return { result, provider: mode, modelName };
   }
 
   const { result, modelName } = await withRetry(() =>
-    generateViaGemini(systemInstruction, userPrompt, effectiveModel)
+    generateViaGemini(
+      systemInstruction,
+      userPrompt,
+      effectiveModel,
+      llmConfig?.apiKey
+    )
   );
   return { result, provider: "gemini", modelName };
 }
@@ -748,10 +771,15 @@ async function generateWastelandCharacterImage(opts: {
   }
 
   if (provider === "modelscope" || provider === "custom_openai") {
+    const clientApiKey = opts.imageConfig?.apiKey?.trim() || "";
     const apiKey =
       provider === "modelscope"
-        ? getModelScopeToken() || process.env.IMAGE_API_KEY?.trim() || ""
-        : process.env.IMAGE_API_KEY?.trim() ||
+        ? clientApiKey ||
+          getModelScopeToken() ||
+          process.env.IMAGE_API_KEY?.trim() ||
+          ""
+        : clientApiKey ||
+          process.env.IMAGE_API_KEY?.trim() ||
           process.env.CUSTOM_LLM_API_KEY?.trim() ||
           "";
 
@@ -770,8 +798,8 @@ async function generateWastelandCharacterImage(opts: {
     if (!apiKey && !isLocal) {
       throw new Error(
         provider === "modelscope"
-          ? "服务端未配置 MODELSCOPE_API_KEY / IMAGE_API_KEY，可切换至「废土手绘直连 (Flux)」免密钥通道。"
-          : "服务端未配置 IMAGE_API_KEY，可切换至「废土手绘直连 (Flux)」免密钥通道。"
+          ? "尚未配置 MODELSCOPE_API_KEY / IMAGE_API_KEY，请在前端系统设置中填写 API Key，或切换至「废土手绘直连 (Flux)」免密钥通道。"
+          : "尚未配置 IMAGE_API_KEY，请在前端系统设置中填写 API Key，或切换至「废土手绘直连 (Flux)」免密钥通道。"
       );
     }
 
@@ -885,9 +913,13 @@ async function synthesizeViaOpenAiCompatibleTts(opts: {
   baseUrl?: string;
   model?: string;
   voice?: string;
+  apiKey?: string;
 }): Promise<string> {
   const apiKey =
-    process.env.CUSTOM_TTS_API_KEY || process.env.CUSTOM_LLM_API_KEY || "";
+    opts.apiKey?.trim() ||
+    process.env.CUSTOM_TTS_API_KEY ||
+    process.env.CUSTOM_LLM_API_KEY ||
+    "";
   const baseUrl = (
     opts.baseUrl?.trim() ||
     process.env.CUSTOM_TTS_BASE_URL ||
@@ -899,7 +931,9 @@ async function synthesizeViaOpenAiCompatibleTts(opts: {
     baseUrl.includes("0.0.0.0");
 
   if (!apiKey && !isLocal) {
-    throw new Error("服务端未配置 CUSTOM_TTS_API_KEY，无法调用自定义语音接口。");
+    throw new Error(
+      "尚未配置 CUSTOM_TTS_API_KEY，请在前端系统设置中填写 API Key 或检查服务端环境变量。"
+    );
   }
 
   const model = opts.model?.trim() || process.env.CUSTOM_TTS_MODEL || "tts-1";
@@ -947,10 +981,14 @@ async function synthesizeViaGeminiTts(opts: {
   intoxication?: number;
   model?: string;
   explicitVoice?: string;
+  apiKey?: string;
 }): Promise<string> {
-  const geminiKey = (process.env.GEMINI_API_KEY || "").trim();
+  const geminiKey =
+    opts.apiKey?.trim() || (process.env.GEMINI_API_KEY || "").trim();
   if (!geminiKey) {
-    throw new Error("服务端未配置 GEMINI_API_KEY。");
+    throw new Error(
+      "尚未配置 GEMINI_API_KEY，请在前端系统设置中填写 API Key 或检查服务端环境变量。"
+    );
   }
 
   const ai = new GoogleGenAI({
@@ -1075,7 +1113,7 @@ async function startServer() {
             : rawMode;
 
         if (mode === "gemini") {
-          const ai = createGeminiClient();
+          const ai = createGeminiClient(llmConfig?.apiKey);
           const modelName = sanitizeFreeGeminiModel(llmConfig?.model);
           const ping = await ai.models.generateContent({
             model: modelName,
@@ -1097,7 +1135,8 @@ async function startServer() {
           resolveOpenAiCompatibleCredentials(
             mode,
             rawMode === mode ? llmConfig?.baseUrl : undefined,
-            rawMode === mode ? llmConfig?.model : undefined
+            rawMode === mode ? llmConfig?.model : undefined,
+            rawMode === mode ? llmConfig?.apiKey : undefined
           );
         if (!apiKey && !allowKeyless) {
           res.json({
@@ -1158,7 +1197,9 @@ async function startServer() {
         }
         if (
           provider === "browser_speech" ||
-          (provider === "gemini_tts" && !process.env.GEMINI_API_KEY?.trim())
+          (provider === "gemini_tts" &&
+            !ttsConfig?.apiKey?.trim() &&
+            !process.env.GEMINI_API_KEY?.trim())
         ) {
           res.json({
             ok: true,
@@ -1177,6 +1218,7 @@ async function startServer() {
             baseUrl: ttsConfig?.baseUrl,
             model: ttsConfig?.model,
             voice: ttsConfig?.voice,
+            apiKey: ttsConfig?.apiKey,
           });
           res.json({
             ok: true,
@@ -1192,6 +1234,7 @@ async function startServer() {
           voicePreset: "gruff_male",
           model: ttsConfig?.model,
           explicitVoice: ttsConfig?.voice,
+          apiKey: ttsConfig?.apiKey,
         });
         res.json({
           ok: true,
@@ -1478,6 +1521,7 @@ ${actionContext}`;
           baseUrl: ttsConfig?.baseUrl,
           model: ttsConfig?.model,
           voice: ttsConfig?.voice,
+          apiKey: ttsConfig?.apiKey,
         });
         if (ttsAudioCache.size >= TTS_CACHE_LIMIT) {
           const oldestKey = ttsAudioCache.keys().next().value;
@@ -1491,7 +1535,8 @@ ${actionContext}`;
         return;
       }
 
-      const geminiKey = (process.env.GEMINI_API_KEY || "").trim();
+      const geminiKey =
+        ttsConfig?.apiKey?.trim() || (process.env.GEMINI_API_KEY || "").trim();
       if (!geminiKey) {
         res.json({
           engine: "browser-speech",
@@ -1507,6 +1552,7 @@ ${actionContext}`;
         intoxication,
         model: ttsConfig?.model,
         explicitVoice: ttsConfig?.voice,
+        apiKey: ttsConfig?.apiKey,
       });
 
       if (ttsAudioCache.size >= TTS_CACHE_LIMIT) {

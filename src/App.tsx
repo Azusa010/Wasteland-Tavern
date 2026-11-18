@@ -286,6 +286,7 @@ export default function App() {
             saveSystemSettings({
               ...cur,
               llm: {
+                ...cur.llm,
                 provider: providerKey,
                 baseUrl: preset.baseUrl,
                 model: data.modelName || preset.model,

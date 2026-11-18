@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   Check,
+  Eye,
+  EyeOff,
+  KeyRound,
   Loader2,
   Mic,
   MicOff,
@@ -100,6 +103,60 @@ function renderCharacterSpritePreview(
   );
 }
 
+interface ApiKeyFieldProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  hint?: string;
+}
+
+/** 通用的 API Key 输入控件：默认以密码形式遮盖，可切换明文查看。 */
+const ApiKeyField: React.FC<ApiKeyFieldProps> = ({
+  label,
+  value,
+  onChange,
+  placeholder,
+  hint,
+}) => {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <label className="text-xs text-[#C9A882] flex items-center gap-1.5">
+          <KeyRound className="w-3.5 h-3.5" />
+          {label}
+        </label>
+        {value && (
+          <button
+            type="button"
+            onClick={() => setVisible((v) => !v)}
+            className="font-mono-num text-[10px] text-[#9E8874] hover:text-[#E59A3C] flex items-center gap-1 cursor-pointer"
+          >
+            {visible ? (
+              <EyeOff className="w-3 h-3" />
+            ) : (
+              <Eye className="w-3 h-3" />
+            )}
+            {visible ? "隐藏" : "显示"}
+          </button>
+        )}
+      </div>
+      <input
+        type={visible ? "text" : "password"}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder || "留空则使用服务端环境变量密钥"}
+        autoComplete="off"
+        className="w-full rounded-xs border border-[#F5D096]/18 bg-[#0C0907] px-3 py-2 font-mono-num text-xs text-[#FAF0E6] placeholder:text-[#7D6A59] focus:outline-none focus:border-[#E59A3C]"
+      />
+      {hint && (
+        <p className="text-[10px] text-[#9E8874] mt-1 leading-snug">{hint}</p>
+      )}
+    </div>
+  );
+};
+
 interface DualPortraitWorkbenchProps {
   subjectLabel: string;
   portraitLabel: string;
@@ -186,6 +243,7 @@ const DualPortraitWorkbench: React.FC<DualPortraitWorkbenchProps> = ({
             provider: settings.image.provider,
             baseUrl: settings.image.baseUrl,
             model: settings.image.model,
+            apiKey: settings.image.apiKey,
           },
         }),
       });
@@ -744,6 +802,7 @@ export const SettingsAndRosterDrawer: React.FC<SettingsAndRosterDrawerProps> = (
                             updateSettings((cur) => ({
                               ...cur,
                               llm: {
+                                ...cur.llm,
                                 provider: key,
                                 baseUrl: preset.baseUrl,
                                 model: preset.model,
@@ -801,6 +860,18 @@ export const SettingsAndRosterDrawer: React.FC<SettingsAndRosterDrawerProps> = (
                     />
                   </div>
 
+                  <ApiKeyField
+                    label="API Key（留空则使用服务端密钥）"
+                    value={settings.llm.apiKey}
+                    onChange={(v) =>
+                      updateSettings((cur) => ({
+                        ...cur,
+                        llm: { ...cur.llm, apiKey: v },
+                      }))
+                    }
+                    placeholder="sk-... / AIza...（仅保存在本机浏览器）"
+                  />
+
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <label className="text-xs text-[#C9A882]">
@@ -848,7 +919,7 @@ export const SettingsAndRosterDrawer: React.FC<SettingsAndRosterDrawerProps> = (
 
                   <div className="rounded-xs border border-[#F5D096]/14 bg-[#15100C]/80 px-3 py-2 flex items-center justify-between gap-2 text-[11px]">
                     <span className="text-[#9E8874]">
-                      服务端密钥槽位（AI Studio 右上角 Secrets 或本地 .env）：
+                      服务端密钥槽位（前端 API Key 优先；Secrets / .env 为回退）：
                     </span>
                     <span className="font-mono-num text-[#F7D7A8] shrink-0">
                       {settings.llm.provider === "gemini"
@@ -912,6 +983,7 @@ export const SettingsAndRosterDrawer: React.FC<SettingsAndRosterDrawerProps> = (
                             updateSettings((cur) => ({
                               ...cur,
                               tts: {
+                                ...cur.tts,
                                 provider: key,
                                 baseUrl: preset.baseUrl,
                                 model: preset.model,
@@ -968,6 +1040,18 @@ export const SettingsAndRosterDrawer: React.FC<SettingsAndRosterDrawerProps> = (
                         />
                       </div>
 
+                      <ApiKeyField
+                        label="API Key（留空则使用服务端密钥）"
+                        value={settings.tts.apiKey}
+                        onChange={(v) =>
+                          updateSettings((cur) => ({
+                            ...cur,
+                            tts: { ...cur.tts, apiKey: v },
+                          }))
+                        }
+                        placeholder="sk-... / AIza...（仅保存在本机浏览器）"
+                      />
+
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label className="block text-xs text-[#C9A882] mb-1">
@@ -1008,7 +1092,7 @@ export const SettingsAndRosterDrawer: React.FC<SettingsAndRosterDrawerProps> = (
 
                       <div className="rounded-xs border border-[#F5D096]/14 bg-[#15100C]/80 px-3 py-2 flex items-center justify-between gap-2 text-[11px]">
                         <span className="text-[#9E8874]">
-                          服务端密钥槽位（Secrets 面板或本地 .env）：
+                          服务端密钥槽位（前端 API Key 优先；Secrets / .env 为回退）：
                         </span>
                         <span className="font-mono-num text-[#F7D7A8] shrink-0">
                           {settings.tts.provider === "gemini_tts"
@@ -1126,6 +1210,18 @@ export const SettingsAndRosterDrawer: React.FC<SettingsAndRosterDrawerProps> = (
                     />
                   </div>
 
+                  <ApiKeyField
+                    label="API Key（留空则使用服务端密钥）"
+                    value={settings.image.apiKey}
+                    onChange={(v) =>
+                      updateSettings((cur) => ({
+                        ...cur,
+                        image: { ...cur.image, apiKey: v },
+                      }))
+                    }
+                    placeholder="留空则使用服务端环境变量密钥（仅保存在本机浏览器）"
+                  />
+
                   <div>
                     <label className="block text-xs text-[#C9A882] mb-1">
                       生图模型名称 (Model)
@@ -1146,7 +1242,7 @@ export const SettingsAndRosterDrawer: React.FC<SettingsAndRosterDrawerProps> = (
 
                   <div className="rounded-xs border border-[#F5D096]/14 bg-[#15100C]/80 px-3 py-2 flex items-center justify-between gap-2 text-[11px]">
                     <span className="text-[#9E8874]">
-                      服务端密钥槽位（Secrets 面板或本地 .env）：
+                      服务端密钥槽位（前端 API Key 优先；Secrets / .env 为回退）：
                     </span>
                     <span className="font-mono-num text-[#F7D7A8] shrink-0">
                       {settings.image.provider === "wasteland_flux" ||

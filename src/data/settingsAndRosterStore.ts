@@ -22,6 +22,8 @@ export interface LlmApiSettings {
   provider: LlmProviderPreset;
   baseUrl: string;
   model: string;
+  /** 前端直接填写的 API Key；留空时回退到服务端环境变量 */
+  apiKey: string;
 }
 
 export interface TtsApiSettings {
@@ -29,6 +31,8 @@ export interface TtsApiSettings {
   baseUrl: string;
   model: string;
   voice: string;
+  /** 前端直接填写的 API Key；留空时回退到服务端环境变量 */
+  apiKey: string;
 }
 
 export interface ImageApiSettings {
@@ -36,6 +40,8 @@ export interface ImageApiSettings {
   baseUrl: string;
   model: string;
   lockWastelandStyle: boolean;
+  /** 前端直接填写的 API Key；留空时回退到服务端环境变量 */
+  apiKey: string;
 }
 
 export interface AudioSystemSettings {
@@ -247,18 +253,21 @@ export function createDefaultSettings(): SystemSettingsState {
       provider: "gemini",
       baseUrl: LLM_PRESET_DEFAULTS.gemini.baseUrl,
       model: LLM_PRESET_DEFAULTS.gemini.model,
+      apiKey: "",
     },
     tts: {
       provider: "gemini_tts",
       baseUrl: TTS_PRESET_DEFAULTS.gemini_tts.baseUrl,
       model: TTS_PRESET_DEFAULTS.gemini_tts.model,
       voice: "auto",
+      apiKey: "",
     },
     image: {
       provider: "wasteland_flux",
       baseUrl: IMAGE_PRESET_DEFAULTS.wasteland_flux.baseUrl,
       model: IMAGE_PRESET_DEFAULTS.wasteland_flux.model,
       lockWastelandStyle: true,
+      apiKey: "",
     },
     audio: {
       bgmEnabled: true,
