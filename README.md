@@ -51,6 +51,21 @@
 
 > 你也可以在游戏的「设置」面板中切换 LLM 服务商、模型与接口地址。
 
+## 部署到魔搭创空间
+
+项目已包含 Docker 部署三件套:`Dockerfile`、`ms_deploy.json`、`.dockerignore`。
+
+1. 创建 **Docker** 类型的创空间(需完成阿里云账号绑定与实名认证)。
+2. 将本仓库推送到创空间 Git 仓库(分支须为 `master`,不支持强推):
+   ```bash
+   git remote add modelscope oauth2:<你的访问令牌>@modelscope.cn/studios/<用户名>/<创空间名>.git
+   git push modelscope master
+   ```
+3. 在创空间「设置 → 环境变量/密钥」中填入 `MODELSCOPE_API_KEY`(或平台内置 `MODELSCOPE_SDK_TOKEN`),建议同时设置 `LLM_PROVIDER=modelscope`。
+4. 平台会自动构建并启动容器,服务将监听创空间要求的 `0.0.0.0:7860`。
+
+> 注意:创空间要求服务必须监听 **7860** 端口(由 `Dockerfile` 中的 `PORT=7860` 保证);`npm start` 生产模式需 Node 原生运行 `server.ts`,已通过带 `.ts` 后缀的导入路径修复扩展名解析问题。
+
 ## 许可证
 
 本项目采用 [MIT License](LICENSE)。

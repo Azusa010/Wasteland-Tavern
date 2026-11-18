@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { GoogleGenAI, ThinkingLevel, Type } from "@google/genai";
-import { retrieveContextualLoreBlock } from "./src/data/wastelandLore";
+import { retrieveContextualLoreBlock } from "./src/data/wastelandLore.ts";
 
 dotenv.config();
 
