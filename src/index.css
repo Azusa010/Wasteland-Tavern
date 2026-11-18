@@ -1,0 +1,204 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --font-display: "Fraunces", "Noto Serif SC", Georgia, serif;
+    --font-sans: "Plus Jakarta Sans", "Noto Sans SC", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    letter-spacing: 0.01em;
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+
+  .font-mono-num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@keyframes popDrinkIn {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 10px) scale(0.92);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -2px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+.animate-drink-pop {
+  animation: popDrinkIn 240ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ==================== 废土黄铜卡尺导轨滚动条（全局白昼吧台 / 图鉴 / 存档舱） ==================== */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #7A5230 #120D0A;
+}
+
+*::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #110C09;
+  border-left: 1px solid rgba(245, 208, 150, 0.08);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #4E3624 0%, #7D5432 50%, #4E3624 100%);
+  border: 1px solid rgba(229, 154, 60, 0.38);
+  border-radius: 2px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #7A5230 0%, #C98232 50%, #7A5230 100%);
+  border-color: rgba(245, 208, 150, 0.72);
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background: #E59A3C;
+  border-color: #FDF5EB;
+}
+
+*::-webkit-scrollbar-corner {
+  background: #110C09;
+}
+
+/* ==================== 核冬黑夜冷铁导轨滚动条（黑夜废墟探险模式自适应） ==================== */
+.theme-night,
+.theme-night * {
+  scrollbar-color: #3E5266 #0C1117;
+}
+
+.theme-night::-webkit-scrollbar-track,
+.theme-night *::-webkit-scrollbar-track {
+  background: #0C1117;
+  border-left: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.theme-night::-webkit-scrollbar-thumb,
+.theme-night *::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #243140 0%, #3E536B 50%, #243140 100%);
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 2px;
+}
+
+.theme-night::-webkit-scrollbar-thumb:hover,
+.theme-night *::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #35485E 0%, #E59A3C 50%, #35485E 100%);
+  border-color: rgba(229, 154, 60, 0.65);
+}
+
+.theme-night::-webkit-scrollbar-corner,
+.theme-night *::-webkit-scrollbar-corner {
+  background: #0C1117;
+}
+
+/* ==================== 哔哔小子荧光绿 CRT 扫描线与内发光质感 ==================== */
+.pipboy-crt {
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.28) 0px,
+      rgba(0, 0, 0, 0.28) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    radial-gradient(circle at 50% 42%, #0E2B16 0%, #07180C 68%, #040E07 100%);
+  box-shadow:
+    inset 0 0 24px rgba(0, 0, 0, 0.9),
+    inset 0 0 12px rgba(74, 222, 128, 0.14);
+}
+
+.pipboy-glow {
+  text-shadow: 0 0 8px rgba(74, 222, 128, 0.45);
+}
+
+/* ==================== 立体牛皮纸客人档案夹材质 ==================== */
+.kraft-paper-3d {
+  background:
+    repeating-linear-gradient(
+      -12deg,
+      rgba(92, 62, 34, 0.03) 0px,
+      rgba(92, 62, 34, 0.03) 2px,
+      transparent 2px,
+      transparent 6px
+    ),
+    linear-gradient(155deg, #E3CA9F 0%, #D4B483 52%, #C4A06D 100%);
+  box-shadow:
+    -6px 8px 0px #A68354,
+    -11px 14px 0px #7D5E37,
+    0 30px 65px rgba(0, 0, 0, 0.85),
+    inset 0 1px 0 rgba(255, 248, 231, 0.55);
+  transform: perspective(1100px) rotateY(-4deg) rotateX(1.5deg);
+}
+
+.kraft-scroll,
+.kraft-scroll * {
+  scrollbar-width: thin;
+  scrollbar-color: #8C6843 transparent;
+}
+
+.kraft-scroll::-webkit-scrollbar,
+.kraft-scroll *::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.kraft-scroll::-webkit-scrollbar-track,
+.kraft-scroll *::-webkit-scrollbar-track {
+  background: transparent;
+  border-left: none;
+}
+
+.kraft-scroll::-webkit-scrollbar-thumb,
+.kraft-scroll *::-webkit-scrollbar-thumb {
+  background: rgba(125, 90, 54, 0.55);
+  border: none;
+  border-radius: 9999px;
+}
+
+/* ==================== 模块化 NPC 服装旧化染洗滤镜 ==================== */
+.npc-dye-0 {
+  filter: none;
+}
+.npc-dye-1 {
+  filter: hue-rotate(14deg) saturate(0.88) brightness(0.96);
+}
+.npc-dye-2 {
+  filter: hue-rotate(-10deg) saturate(0.84) contrast(1.04) brightness(0.93);
+}
+.npc-dye-3 {
+  filter: sepia(0.18) saturate(1.08) brightness(1.02);
+}
+.npc-dye-4 {
+  filter: hue-rotate(24deg) saturate(0.76) brightness(0.95);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

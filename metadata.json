@@ -1,0 +1,6 @@
+{
+  "name": "废土酒馆 · Wasteland Tavern",
+  "description": "核战废土上的昼夜双循环叙事经营与卡牌肉鸽游戏：白昼调酒招待拥有跨天记忆与量化状态的 AI 废土客，黑夜深入废墟通过卡牌构筑搜集食材，守住所有人最后的落脚点。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
